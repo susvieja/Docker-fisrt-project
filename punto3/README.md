@@ -51,15 +51,12 @@ ping -c 2 172.18.0.3
 wireshark
 ```
 
-- Seleccionar la interfaz `veth` correspondiente a `red_arp` o usar `any`
+- Seleccionar la interfaz `veth` correspondiente a `red_arp`
 - Aplicar el filtro: `icmp`
-- **No iniciar la captura aún**
 
 ---
 
 ## Procedimiento
-
-### Parte 1 — Sin perturbación
 
 **Iniciar la captura en Wireshark.**
 
@@ -68,17 +65,11 @@ Desde contenedor1, enviar 10 paquetes ICMP:
 ping -c 10 172.18.0.3
 ```
 
-**Detener la captura en Wireshark.**
+**Resultado.**
 
 El output del ping mostrará algo similar a:
-```
-PING 172.18.0.3 (172.18.0.3): 56 data bytes
-64 bytes from 172.18.0.3: seq=0 ttl=64 time=0.081 ms
-64 bytes from 172.18.0.3: seq=1 ttl=64 time=0.092 ms
-64 bytes from 172.18.0.3: seq=2 ttl=64 time=0.078 ms
-...
-round-trip min/avg/max/stddev = 0.078/0.085/0.102/0.008 ms
-```
+
+![Texto alternativo](punto3a.png)
 
 En una red Docker local los RTT son muy bajos (< 1ms) y muy estables, lo que
 indica prácticamente cero jitter.
@@ -115,35 +106,28 @@ Desde contenedor1, enviar 20 paquetes:
 ping -c 20 172.18.0.3
 ```
 
-**Detener la captura.**
+**Resultado.**
 
 El output ahora mostrará RTT mucho mayores y con más variación:
-```
-64 bytes from 172.18.0.3: seq=0 ttl=64 time=98.3 ms
-64 bytes from 172.18.0.3: seq=1 ttl=64 time=112.7 ms
-64 bytes from 172.18.0.3: seq=2 ttl=64 time=87.4 ms
-64 bytes from 172.18.0.3: seq=3 ttl=64 time=134.1 ms
-...
-round-trip min/avg/max/stddev = 67.2/103.5/142.8/22.4 ms
-```
+
+![Texto alternativo](punto3b.png)
 
 **Limpiar la configuración de tc al terminar:**
 ```bash
 sudo tc qdisc del dev docker0 root
 ```
-
 ---
 
 ## Análisis y respuestas
 
 ### ¿Se observa mayor variabilidad en la segunda captura?
 
-Sí, la diferencia es muy clara. En la primera captura (sin perturbación) los RTT
-son consistentemente bajos y casi idénticos entre sí (< 1ms), con una desviación
-estándar mínima. En la segunda captura (con perturbación) los RTT rondan los 100ms
+Si hay variablidad. En la primera captura los RTT
+son consistentemente bajos y casi idénticos entre sí (< 1ms), con una desviación mínima.
+En la segunda captura los RTT rondan los 100ms
 pero varían significativamente de un paquete al siguiente, con diferencias de hasta
-40-50ms entre paquetes consecutivos. Esta variabilidad es exactamente el jitter
-que introdujo el comando `tc netem`.
+40-50ms entre paquetes consecutivos. Es exactamente el jitter
+que se introdujo en el comando `tc netem`.
 
 ### ¿Cómo se calcula el jitter?
 
@@ -163,7 +147,7 @@ RTT4 = 134.1 ms  →  Jitter = |134.1 - 87.4| = 46.7 ms
 ```
 
 El jitter promedio sería la media de todas esas diferencias. En la primera captura
-(sin perturbación) el jitter calculado es prácticamente 0ms, confirmando que la
+el jitter calculado es prácticamente 0ms, confirmando que la
 red Docker local es muy estable.
 
 ### ¿Qué es la latencia?
@@ -185,7 +169,7 @@ decir, el tiempo total de ida y vuelta del paquete.
 - **Tipo de medio:** la fibra óptica tiene menor latencia que el cable de cobre,
   y ambos mucho menor que las conexiones inalámbricas o satelitales
 
-En el experimento, la latencia base de la red Docker local es casi cero porque
+En el taller, la latencia base de la red Docker local es casi cero porque
 los contenedores están en la misma máquina. El comando `tc netem delay 50ms`
 simuló artificialmente la latencia que tendría una red real.
 
@@ -218,32 +202,4 @@ el fenómeno conocido como **lag**: el personaje se teletransporta, las acciones
 no responden, o el juego muestra una realidad diferente a la del servidor. Muchos
 juegos tienen tolerancia a cierta latencia fija, pero son muy sensibles al jitter.
 
-**Valores de referencia:**
-| Aplicación | Latencia aceptable | Jitter aceptable |
-|---|---|---|
-| VoIP | < 150ms | < 30ms |
-| Gaming competitivo | < 60ms | < 10ms |
-| Videoconferencia | < 200ms | < 50ms |
-| Streaming de video | < 500ms | tolerante (usa buffer) |
-
 ---
-
-## Comparativa de resultados
-
-| Métrica | Sin perturbación | Con perturbación (tc netem) |
-|---|---|---|
-| RTT promedio | < 1ms | ~100ms |
-| RTT mínimo | ~0.07ms | ~67ms |
-| RTT máximo | ~0.12ms | ~143ms |
-| Jitter promedio | ~0ms | ~20-30ms |
-| Variabilidad | Muy baja | Alta |
-
----
-
-## Estructura de archivos
-
-```
-taller-docker/
-└── punto3/
-    └── README.md    ← Este archivo
-```
