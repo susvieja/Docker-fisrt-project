@@ -12,6 +12,8 @@ docker run --rm -it \
 muestra un video de cuenta regresiva renderizado en caracteres ASCII
 directamente en la terminal de Konsole EN Arch linux, sin necesidad de interfaz gráfica.
 
+|Parámetro | Descripción |
+|---|---|
 |`--rm` | Elimina el contenedor automáticamente al terminar |
 | `-it` | Modo interactivo con terminal |
 | `-e XDG_RUNTIME_DIR=/tmp` | Corrige el error de variable de entorno en Wayland |
@@ -87,6 +89,8 @@ docker run -it --rm \
   --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
   ros-gazebo
 ```
+|Parámetro | Descripción |
+|---|---|
 | `--name ros-container` | Nombre del contenedor para referenciarlo desde otras terminales |
 | `--env="DISPLAY=$DISPLAY"` | Pasa la variable de display para renderizar ventanas gráficas |
 | `--env="WAYLAND_DISPLAY=$WAYLAND_DISPLAY"` | Soporte para entornos Wayland como KDE |
